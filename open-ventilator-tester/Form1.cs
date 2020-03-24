@@ -25,9 +25,14 @@ namespace open_ventilator_tester
         private void Form1_Load(object sender, EventArgs e)
         {
             Uni_T_Devices.UT372 rpm_meter = new Uni_T_Devices.UT372();
+
+            rpm_meter.openUSB();
+
+            //rpm_meter.dumpUSBData();
+
             //MessageBox.Show(rpm_meter.parseSerialInputToRPM("070?<3=7<60655>607;007885").ToString());
             //Console.WriteLine(rpm_meter.parseSerialInputToRPM("07;7;7;7;7;655>607;007885").ToString());
-            Console.WriteLine(rpm_meter.parseSerialInputToRPM("0607;7;7;7;655>607;007885").ToString());
+            //Console.WriteLine(rpm_meter.parseSerialInputToRPM("0607;7;7;7;655>607;007885").ToString());
 
             dataGridView1.DataSource = cyclepoints;
             dataGridView1.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
@@ -103,7 +108,8 @@ namespace open_ventilator_tester
                     else
                     {
                         bTestRunning = false;
-                        changeStep(0);
+                        changeStep(0, false);
+                        stopMotor();
                     }
 
                 }
@@ -121,7 +127,7 @@ namespace open_ventilator_tester
             bTestRunning = true;
         }
 
-        private void changeStep(int step)
+        private void changeStep(int step, bool controlMotor = true)
         {
             currentStepNumber = step;
             
@@ -135,11 +141,28 @@ namespace open_ventilator_tester
 
             toolStripProgressBar1.Value = 0;
             toolStripProgressBar1.Maximum = Convert.ToInt16(cyclepoints[currentStepNumber].dura);
+
+            if (controlMotor)
+            {
+                serialMotor.Open();
+                serialMotor.Write(currentStep.outp.ToString());
+                serialMotor.Close();
+            }
         }
 
         private void btnStop_Click(object sender, EventArgs e)
         {
+            stopMotor();
+        }
+
+        private void stopMotor()
+        {
+            serialMotor.Open();
+            serialMotor.Write("0");
+            serialMotor.Close();
+
             bTestRunning = false;
+
         }
     }
 }
