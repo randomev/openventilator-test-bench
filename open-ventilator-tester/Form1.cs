@@ -17,6 +17,9 @@ namespace open_ventilator_tester
         private static Mutex mutLog = new Mutex();
         private static Mutex mut = new Mutex();
 
+        // TTI CPX400 DP 2 x 420 W power supply, connected to USB (or LAN or GPIB but here we use USB for quick & simple solution)
+        System.IO.Ports.SerialPort PSU = new System.IO.Ports.SerialPort();
+
         BindingList<Cyclepoint> cyclepoints = new BindingList<Cyclepoint>();
         bool bTestRunning = false;
         int currentStepNumber = -1;
@@ -24,9 +27,7 @@ namespace open_ventilator_tester
         string logfilename = "";
 
         DataTable dtLogData = new DataTable();
-        DateTime dt0 = DateTime.MinValue;  // any date will do, just know which you use!
-
-
+        //DateTime dt0 = DateTime.MinValue;  // any date will do, just know which you use!
         double last_motorcurrent = 0;
         double last_motorvoltage = 0;
         double last_motortemp = 0;
@@ -45,7 +46,7 @@ namespace open_ventilator_tester
         const int DATA_MOTORVOLTAGE = 4;
         const int DATA_MOTORCURRENT = 5;
 
-        const int DATA_MAX = 5;
+        const int DATA_MAX = 6;
 
         public Form1()
         {
@@ -73,6 +74,20 @@ namespace open_ventilator_tester
 
         private void Form1_Load(object sender, EventArgs e)
         {
+
+            PSU.PortName = "COM10";
+            PSU.BaudRate = 9600;
+
+            try
+            {
+                PSU.DataReceived += (OnPSU_Rx);
+                PSU.Open();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Problems opening PSU port:" + ex.Message);
+            }
+
             Uni_T_Devices.UT372 rpm_meter = new Uni_T_Devices.UT372();
 
             rpm_meter.openUSB();
@@ -88,12 +103,14 @@ namespace open_ventilator_tester
 
             dataGridView2.Rows.Clear();
 
-            datanames.Add(new DataField("Time", 1));
-            datanames.Add(new DataField("MRPM", 2));
-            datanames.Add(new DataField("MRPM Set", 3));
-            datanames.Add(new DataField("Flow", 4));
-            datanames.Add(new DataField("MVoltage",5));
-            datanames.Add(new DataField("MCurrent", 6));
+            datanames.Add(new DataField("Time", 0));
+            datanames.Add(new DataField("MRPM", 1));
+            datanames.Add(new DataField("MRPM Set", 2));
+            datanames.Add(new DataField("Flow", 3));
+            datanames.Add(new DataField("MVoltage",4));
+            datanames.Add(new DataField("MCurrent", 5));
+
+            chart1.Series.Clear();
 
             foreach (DataField df in datanames)
             {
@@ -103,8 +120,15 @@ namespace open_ventilator_tester
                 chart1.Series.Add(df.Name);
                 chart1.Series.Last().ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
                 chart1.Series.Last().XValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Time;
+
+                if (df.Index == DATA_MOTORCURRENT)
+                {
+                    chart1.Series.Last().YAxisType = System.Windows.Forms.DataVisualization.Charting.AxisType.Secondary;
+                } else {
+                    chart1.Series.Last().YAxisType = System.Windows.Forms.DataVisualization.Charting.AxisType.Primary;
+                }
             }
-            dt0 = DateTime.Now;  // any date will do, just know which you use!
+            //dt0 = DateTime.Now;  // any date will do, just know which you use!
             chart1.ChartAreas[0].AxisX.LabelStyle.Format = "HH:mm:ss";
 
         }
@@ -157,7 +181,17 @@ namespace open_ventilator_tester
 
             if (datapoints[DATA_MOTOR_RPM_SETPOINT].Count > 0)
             {
-                last_motorcurrent = addPointsToGraph(chart1.Series[DATA_MOTOR_RPM_SETPOINT], datapoints[DATA_MOTOR_RPM_SETPOINT]);
+                last_rpm_setpoint = addPointsToGraph(chart1.Series[DATA_MOTOR_RPM_SETPOINT], datapoints[DATA_MOTOR_RPM_SETPOINT]);
+            }
+
+            if (datapoints[DATA_MOTORCURRENT].Count > 0)
+            {
+                last_motorcurrent = addPointsToGraph(chart1.Series[DATA_MOTORCURRENT], datapoints[DATA_MOTORCURRENT]);
+            }
+
+            if (datapoints[DATA_MOTORVOLTAGE].Count > 0)
+            {
+                last_motorvoltage = addPointsToGraph(chart1.Series[DATA_MOTORVOLTAGE], datapoints[DATA_MOTORVOLTAGE]);
             }
 
             mutLog.WaitOne();
@@ -180,6 +214,7 @@ namespace open_ventilator_tester
         private void tmrMain_Tick(object sender, EventArgs e)
         {
             lblTime.Text = DateTime.Now.ToShortTimeString();
+
             if (bTestRunning)
             {
                 lblStatus.Text = "RUNNING";
@@ -191,7 +226,9 @@ namespace open_ventilator_tester
             
             if (bTestRunning)
             {
-                currentStep.dura = currentStep.dura - tmrMain.Interval/1000;
+                queryAndLogPSU(); // query and log power supply TTI CPX400PD - connected via USB serial port or LAN TCP
+
+                currentStep.dura = currentStep.dura - tmrMain.Interval/1000.0f;
                 
                 lblStepRemainingSec.Text = currentStep.dura.ToString()  + " s remaining";
                 if (toolStripProgressBar1.Maximum >= currentStep.dura)
@@ -199,6 +236,7 @@ namespace open_ventilator_tester
 
                 dataGridView1.CurrentCell = dataGridView1.Rows[currentStepNumber].Cells[0];
 
+                // add datapoint to log and graph
                 datapoints[DATA_MOTOR_RPM_SETPOINT].Add(new DataPoint(currentStep.outp));
 
                 if (currentStep.dura <= 0)
@@ -220,9 +258,18 @@ namespace open_ventilator_tester
             }
         }
 
-        private void btnStart_Click(object sender, EventArgs e)
+        private void queryAndLogPSU()
         {
 
+            if (PSU.IsOpen)
+            {
+                // this queries voltage and current from power supply
+                // V1O ?; I1O ? 
+                PSU.WriteLine("V1O?;I1O?");
+            }
+        }
+        private void btnStart_Click(object sender, EventArgs e)
+        {
 
             SaveFileDialog sfdial = new SaveFileDialog();
             sfdial.Filter = "Comma Separated Value (*.CSV)|*.CSV";
@@ -272,6 +319,7 @@ namespace open_ventilator_tester
         private void btnStop_Click(object sender, EventArgs e)
         {
             stopMotor();
+
             tmrWriteLog.Enabled = false;
         }
 
@@ -329,6 +377,50 @@ namespace open_ventilator_tester
         private void tmrWriteLog_Tick(object sender, EventArgs e)
         {
             writeLog();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (PSU.IsOpen)
+                PSU.Close();
+
+        }
+
+        private void OnPSU_Rx(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+        {
+            string a = PSU.ReadLine();
+            Console.WriteLine(a);
+            Single v = 0.0f;
+
+            try
+            {
+                v = Convert.ToSingle(a.Replace("A", "").Replace("V","").Replace(".",",").Replace("\r",""));
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            if (a.Contains("V"))
+            {
+                // add datapoint to log and graph
+                datapoints[DATA_MOTORVOLTAGE].Add(new DataPoint(v));
+
+            }
+            if (a.Contains("A"))
+            {
+                // add datapoint to log and graph
+                datapoints[DATA_MOTORCURRENT].Add(new DataPoint(v));
+
+            }
+
+            // 12.649V
+            // 0.023A
+        }
+
+        private void serialMotor_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+        {
+
         }
     }
 }
