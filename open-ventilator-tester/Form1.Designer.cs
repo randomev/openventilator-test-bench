@@ -32,23 +32,29 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
             this.toolStrip1 = new System.Windows.Forms.ToolStrip();
+            this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
             this.btnOpenTestcycle = new System.Windows.Forms.ToolStripButton();
             this.btnSaveParameters = new System.Windows.Forms.ToolStripButton();
-            this.btnStop = new System.Windows.Forms.Button();
-            this.btnStart = new System.Windows.Forms.Button();
+            this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripLabel2 = new System.Windows.Forms.ToolStripLabel();
+            this.btnStart = new System.Windows.Forms.ToolStripButton();
+            this.Stop = new System.Windows.Forms.ToolStripButton();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.lblTime = new System.Windows.Forms.ToolStripStatusLabel();
             this.lblStepRemainingSec = new System.Windows.Forms.ToolStripStatusLabel();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripProgressBar1 = new System.Windows.Forms.ToolStripProgressBar();
+            this.lblLogStatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.splitContainer3 = new System.Windows.Forms.SplitContainer();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.dataGridView2 = new System.Windows.Forms.DataGridView();
             this.tmrMain = new System.Windows.Forms.Timer(this.components);
             this.serialMotor = new System.IO.Ports.SerialPort(this.components);
+            this.tmrWriteLog = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -60,7 +66,12 @@
             this.toolStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.statusStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
+            this.splitContainer3.Panel1.SuspendLayout();
+            this.splitContainer3.Panel2.SuspendLayout();
+            this.splitContainer3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             this.SuspendLayout();
             // 
             // splitContainer1
@@ -75,7 +86,7 @@
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.dataGridView1);
+            this.splitContainer1.Panel2.Controls.Add(this.splitContainer3);
             this.splitContainer1.Size = new System.Drawing.Size(800, 450);
             this.splitContainer1.SplitterDistance = 639;
             this.splitContainer1.TabIndex = 0;
@@ -90,67 +101,83 @@
             // splitContainer2.Panel1
             // 
             this.splitContainer2.Panel1.Controls.Add(this.toolStrip1);
-            this.splitContainer2.Panel1.Controls.Add(this.btnStop);
-            this.splitContainer2.Panel1.Controls.Add(this.btnStart);
             // 
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.chart1);
             this.splitContainer2.Panel2.Controls.Add(this.statusStrip1);
             this.splitContainer2.Size = new System.Drawing.Size(639, 450);
-            this.splitContainer2.SplitterDistance = 68;
+            this.splitContainer2.SplitterDistance = 26;
             this.splitContainer2.TabIndex = 0;
             // 
             // toolStrip1
             // 
             this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripLabel1,
             this.btnOpenTestcycle,
-            this.btnSaveParameters});
+            this.btnSaveParameters,
+            this.toolStripSeparator1,
+            this.toolStripLabel2,
+            this.btnStart,
+            this.Stop});
             this.toolStrip1.Location = new System.Drawing.Point(0, 0);
             this.toolStrip1.Name = "toolStrip1";
             this.toolStrip1.Size = new System.Drawing.Size(639, 25);
             this.toolStrip1.TabIndex = 3;
             this.toolStrip1.Text = "toolStrip1";
             // 
+            // toolStripLabel1
+            // 
+            this.toolStripLabel1.Name = "toolStripLabel1";
+            this.toolStripLabel1.Size = new System.Drawing.Size(69, 22);
+            this.toolStripLabel1.Text = "Parameters:";
+            // 
             // btnOpenTestcycle
             // 
-            this.btnOpenTestcycle.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.btnOpenTestcycle.Image = ((System.Drawing.Image)(resources.GetObject("btnOpenTestcycle.Image")));
             this.btnOpenTestcycle.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnOpenTestcycle.Name = "btnOpenTestcycle";
-            this.btnOpenTestcycle.Size = new System.Drawing.Size(124, 22);
-            this.btnOpenTestcycle.Text = "Open test parameters";
+            this.btnOpenTestcycle.Size = new System.Drawing.Size(56, 22);
+            this.btnOpenTestcycle.Text = "Open";
             this.btnOpenTestcycle.Click += new System.EventHandler(this.btnOpenTestcycle_Click);
             // 
             // btnSaveParameters
             // 
-            this.btnSaveParameters.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.btnSaveParameters.Image = ((System.Drawing.Image)(resources.GetObject("btnSaveParameters.Image")));
             this.btnSaveParameters.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnSaveParameters.Name = "btnSaveParameters";
-            this.btnSaveParameters.Size = new System.Drawing.Size(119, 22);
-            this.btnSaveParameters.Text = "Save test parameters";
+            this.btnSaveParameters.Size = new System.Drawing.Size(51, 22);
+            this.btnSaveParameters.Text = "Save";
             this.btnSaveParameters.Click += new System.EventHandler(this.btnSaveParameters_Click);
             // 
-            // btnStop
+            // toolStripSeparator1
             // 
-            this.btnStop.Location = new System.Drawing.Point(111, 28);
-            this.btnStop.Name = "btnStop";
-            this.btnStop.Size = new System.Drawing.Size(75, 23);
-            this.btnStop.TabIndex = 2;
-            this.btnStop.Text = "Stop test";
-            this.btnStop.UseVisualStyleBackColor = true;
-            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            this.toolStripSeparator1.Name = "toolStripSeparator1";
+            this.toolStripSeparator1.Size = new System.Drawing.Size(6, 25);
+            // 
+            // toolStripLabel2
+            // 
+            this.toolStripLabel2.Name = "toolStripLabel2";
+            this.toolStripLabel2.Size = new System.Drawing.Size(30, 22);
+            this.toolStripLabel2.Text = "Test:";
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(12, 28);
+            this.btnStart.Image = ((System.Drawing.Image)(resources.GetObject("btnStart.Image")));
+            this.btnStart.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(75, 23);
-            this.btnStart.TabIndex = 1;
+            this.btnStart.Size = new System.Drawing.Size(73, 22);
             this.btnStart.Text = "Start test";
-            this.btnStart.UseVisualStyleBackColor = true;
             this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
+            // 
+            // Stop
+            // 
+            this.Stop.Image = ((System.Drawing.Image)(resources.GetObject("Stop.Image")));
+            this.Stop.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.Stop.Name = "Stop";
+            this.Stop.Size = new System.Drawing.Size(73, 22);
+            this.Stop.Text = "Stop test";
+            this.Stop.Click += new System.EventHandler(this.btnStop_Click);
             // 
             // chart1
             // 
@@ -161,11 +188,7 @@
             this.chart1.Legends.Add(legend1);
             this.chart1.Location = new System.Drawing.Point(0, 0);
             this.chart1.Name = "chart1";
-            series1.ChartArea = "ChartArea1";
-            series1.Legend = "Legend1";
-            series1.Name = "Series1";
-            this.chart1.Series.Add(series1);
-            this.chart1.Size = new System.Drawing.Size(639, 356);
+            this.chart1.Size = new System.Drawing.Size(639, 398);
             this.chart1.TabIndex = 1;
             this.chart1.Text = "chart1";
             // 
@@ -175,8 +198,9 @@
             this.lblTime,
             this.lblStepRemainingSec,
             this.lblStatus,
-            this.toolStripProgressBar1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 356);
+            this.toolStripProgressBar1,
+            this.lblLogStatus});
+            this.statusStrip1.Location = new System.Drawing.Point(0, 398);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(639, 22);
             this.statusStrip1.TabIndex = 0;
@@ -205,14 +229,47 @@
             this.toolStripProgressBar1.Name = "toolStripProgressBar1";
             this.toolStripProgressBar1.Size = new System.Drawing.Size(100, 16);
             // 
+            // lblLogStatus
+            // 
+            this.lblLogStatus.Name = "lblLogStatus";
+            this.lblLogStatus.Size = new System.Drawing.Size(12, 17);
+            this.lblLogStatus.Text = "-";
+            // 
+            // splitContainer3
+            // 
+            this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer3.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer3.Name = "splitContainer3";
+            this.splitContainer3.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer3.Panel1
+            // 
+            this.splitContainer3.Panel1.Controls.Add(this.dataGridView1);
+            // 
+            // splitContainer3.Panel2
+            // 
+            this.splitContainer3.Panel2.Controls.Add(this.dataGridView2);
+            this.splitContainer3.Size = new System.Drawing.Size(157, 450);
+            this.splitContainer3.SplitterDistance = 220;
+            this.splitContainer3.TabIndex = 0;
+            // 
             // dataGridView1
             // 
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridView1.Location = new System.Drawing.Point(0, 0);
             this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(157, 450);
-            this.dataGridView1.TabIndex = 0;
+            this.dataGridView1.Size = new System.Drawing.Size(157, 220);
+            this.dataGridView1.TabIndex = 1;
+            // 
+            // dataGridView2
+            // 
+            this.dataGridView2.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView2.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dataGridView2.Location = new System.Drawing.Point(0, 0);
+            this.dataGridView2.Name = "dataGridView2";
+            this.dataGridView2.Size = new System.Drawing.Size(157, 226);
+            this.dataGridView2.TabIndex = 2;
             // 
             // tmrMain
             // 
@@ -224,6 +281,11 @@
             // 
             this.serialMotor.PortName = "COM6";
             // 
+            // tmrWriteLog
+            // 
+            this.tmrWriteLog.Interval = 5000;
+            this.tmrWriteLog.Tick += new System.EventHandler(this.tmrWriteLog_Tick);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -231,6 +293,7 @@
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.splitContainer1);
             this.Name = "Form1";
+            this.Text = "Ventilator test-bench";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -247,7 +310,12 @@
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.splitContainer3.Panel1.ResumeLayout(false);
+            this.splitContainer3.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
+            this.splitContainer3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -258,9 +326,6 @@
         private System.Windows.Forms.SplitContainer splitContainer2;
         private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
         private System.Windows.Forms.StatusStrip statusStrip1;
-        private System.Windows.Forms.DataGridView dataGridView1;
-        private System.Windows.Forms.Button btnStop;
-        private System.Windows.Forms.Button btnStart;
         private System.Windows.Forms.ToolStrip toolStrip1;
         private System.Windows.Forms.ToolStripButton btnOpenTestcycle;
         private System.Windows.Forms.ToolStripButton btnSaveParameters;
@@ -270,6 +335,16 @@
         private System.Windows.Forms.ToolStripStatusLabel lblStatus;
         private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar1;
         private System.IO.Ports.SerialPort serialMotor;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
+        private System.Windows.Forms.ToolStripButton btnStart;
+        private System.Windows.Forms.ToolStripButton Stop;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel1;
+        private System.Windows.Forms.ToolStripLabel toolStripLabel2;
+        private System.Windows.Forms.ToolStripStatusLabel lblLogStatus;
+        private System.Windows.Forms.Timer tmrWriteLog;
+        private System.Windows.Forms.SplitContainer splitContainer3;
+        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridView dataGridView2;
     }
 }
 

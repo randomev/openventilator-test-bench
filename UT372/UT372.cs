@@ -141,23 +141,23 @@ namespace Uni_T_Devices
                 reader.DataReceived -= (OnRxEndPointData);
 
                 byte[] readBuffer = new byte[8];
-                while (ec == ErrorCode.None)
-                {
-                    int bytesRead;
+                //while (ec == ErrorCode.None)
+                //{
+                //    int bytesRead;
 
-                    // If the device hasn't sent data in the last 100 milliseconds,
-                    // a timeout error (ec = IoTimedOut) will occur. 
-                    //ec = reader.ReadFlush();
-                    //for (int i = 0; i < 10; i++)
-                    //{
-                    //    ec = reader.Read(readBuffer, 100, out bytesRead);
+                //    // If the device hasn't sent data in the last 100 milliseconds,
+                //    // a timeout error (ec = IoTimedOut) will occur. 
+                //    //ec = reader.ReadFlush();
+                //    //for (int i = 0; i < 10; i++)
+                //    //{
+                //    //    ec = reader.Read(readBuffer, 100, out bytesRead);
 
-                    //    //if (bytesRead == 0) throw new Exception("No more bytes!");
+                //    //    //if (bytesRead == 0) throw new Exception("No more bytes!");
 
-                    //    // Write that output to the console.
-                    //    Console.Write(Encoding.Default.GetString(readBuffer, 0, bytesRead));
-                    //}
-                }
+                //    //    // Write that output to the console.
+                //    //    Console.Write(Encoding.Default.GetString(readBuffer, 0, bytesRead));
+                //    //}
+                //}
 
                 Console.WriteLine("\r\nDone!\r\n");
                 }
