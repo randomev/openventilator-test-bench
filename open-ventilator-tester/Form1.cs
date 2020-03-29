@@ -26,6 +26,9 @@ namespace open_ventilator_tester
         // prepare class objects
         public BufferedWaveProvider bwp;
 
+        // log headers
+        bool bHeaderWritten = false;
+        string csvHeader = "";
 
         private static Mutex mutLog = new Mutex();
         private static Mutex mut = new Mutex();
@@ -321,9 +324,11 @@ namespace open_ventilator_tester
             datanames.Add(new DataField("MCurrent", 5));
 
             chart1.Series.Clear();
+            csvHeader = "";
 
             foreach (DataField df in datanames)
             {
+                csvHeader = csvHeader + df.Name + ";";
                 dtLogData.Columns.Add(df.Name);
                 datapoints.Add(new List<DataPoint>());
 
@@ -411,8 +416,11 @@ namespace open_ventilator_tester
 
             for (int i = 1;i<DATA_MAX;i++)
             {
-                r[datanames[i].Index] = datapoints[i];
+                if (datapoints[i].Count>0)
+                    r[datanames[i].Index] = datapoints[i].Average(selector => selector.y);
+                
                 datapoints[i] = new List<DataPoint>();
+
             }
 
             dtLogData.Rows.Add(r);
@@ -510,6 +518,7 @@ namespace open_ventilator_tester
             changeStep(0);
             bTestRunning = true;
             tmrWriteLog.Enabled = true;
+            bHeaderWritten = false;
 
         }
 
@@ -577,6 +586,12 @@ namespace open_ventilator_tester
                 System.IO.StreamWriter file = new System.IO.StreamWriter(logfilename, true);
 
                 //    // Write the DataPoints into the file.
+
+                if (bHeaderWritten == false)
+                {
+                    file.WriteLine(csvHeader);
+                    bHeaderWritten = true;
+                }
 
                 file.Write(csvContent);
 
