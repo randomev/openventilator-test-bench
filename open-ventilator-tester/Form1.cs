@@ -86,7 +86,7 @@ namespace open_ventilator_tester
 
             scottPlotUC2.plt.Title("Microphone FFT Data");
             scottPlotUC2.plt.YLabel("Power (raw)");
-            scottPlotUC2.plt.XLabel("Frequency (Hz)");
+            scottPlotUC2.plt.XLabel("Frequency (kHz)");
             scottPlotUC2.Render();
         }
 
@@ -117,7 +117,7 @@ namespace open_ventilator_tester
         {
             // turn off the timer, take as long as we need to plot, then turn the timer back on
             timerAudioReplot.Enabled = false;
-            PlotLatestData();
+            PlotLatestAudioData();
             timerAudioReplot.Enabled = true;
 
         }
@@ -125,7 +125,7 @@ namespace open_ventilator_tester
 
         public int numberOfDraws = 0;
         public bool needsAutoScaling = true;
-        public void PlotLatestData()
+        public void PlotLatestAudioData()
         {
             // check the incoming microphone audio
             int frameSize = BUFFERSIZE;
@@ -159,35 +159,53 @@ namespace open_ventilator_tester
                 pcm[i] = (double)(val) / Math.Pow(2, 16) * 200.0;
             }
 
+            int maxIndex = 0;
+            double maxLevelAtFreq = 0;
             // calculate the full FFT
-            fft = FFT(pcm);
+            fft = FFT(pcm, out maxIndex);
 
             // determine horizontal axis units for graphs
             double pcmPointSpacingMs = RATE / 1000;
             double fftMaxFreq = RATE / 2;
             double fftPointSpacingHz = fftMaxFreq / graphPointCount;
 
+            // calculate frequency where peak occurs
+            maxLevelAtFreq = fftPointSpacingHz * maxIndex * 2;
+
             // just keep the real half (the other half imaginary)
             Array.Copy(fft, fftReal, fftReal.Length);
+
+            // use a color array for displaying data from low to high density
+            Color[] colors = new Color[]
+            {
+    ColorTranslator.FromHtml("#440154"),
+    ColorTranslator.FromHtml("#39568C"),
+    ColorTranslator.FromHtml("#1F968B"),
+    ColorTranslator.FromHtml("#73D055"),
+            };
 
             // plot the Xs and Ys for both graphs
             scottPlotUC1.plt.Clear();
             scottPlotUC1.plt.PlotSignal(pcm, pcmPointSpacingMs,0,0,Color.Blue);
             scottPlotUC2.plt.Clear();
-            scottPlotUC2.plt.PlotSignal(fftReal, fftPointSpacingHz,0,0, Color.Blue);
+            scottPlotUC2.plt.PlotSignal(fftReal, fftPointSpacingHz,0,0, colorByDensity: colors);
 
             // optionally adjust the scale to automatically fit the data
             if (needsAutoScaling)
             {
+                
                 scottPlotUC1.plt.AxisAuto();
                 scottPlotUC2.plt.AxisAuto();
+                
                 needsAutoScaling = false;
             }
 
             //scottPlotUC1.PlotSignal(Ys, RATE);
 
             numberOfDraws += 1;
-            lblStatus.Text = $"Analyzed and graphed PCM and FFT data {numberOfDraws} times";
+            lblMaxFreq.Text = "FFT at " + maxLevelAtFreq.ToString("F0") + " Hz";
+
+            //lblStatus.Text = $"Analyzed and graphed PCM and FFT data {numberOfDraws} times";
             scottPlotUC1.Render();
             scottPlotUC2.Render();
             // this reduces flicker and helps keep the program responsive
@@ -215,15 +233,25 @@ namespace open_ventilator_tester
             System.Diagnostics.Process.Start("https://github.com/swharden/Csharp-Data-Visualization");
         }
 
-        public double[] FFT(double[] data)
+        public double[] FFT(double[] data, out int maxIndex)
         {
+            double maxValueSoFar = 0;
+            maxIndex = 0;
+
             double[] fft = new double[data.Length];
             System.Numerics.Complex[] fftComplex = new System.Numerics.Complex[data.Length];
             for (int i = 0; i < data.Length; i++)
                 fftComplex[i] = new System.Numerics.Complex(data[i], 0.0);
             Accord.Math.FourierTransform.FFT(fftComplex, Accord.Math.FourierTransform.Direction.Forward);
             for (int i = 0; i < data.Length; i++)
+            { 
                 fft[i] = fftComplex[i].Magnitude;
+                if (fft[i] > maxValueSoFar)
+                {
+                    maxValueSoFar = fft[i];
+                    maxIndex = i;
+                }
+            }
             return fft;
 
         }
@@ -237,7 +265,7 @@ namespace open_ventilator_tester
             avg = 0;
             if (points.Count == 0)
                 return 0;
-
+            
             foreach (DataPoint dp in points)
             {
                 DateTime datepoint = new DateTime(dp.x);
@@ -418,8 +446,12 @@ namespace open_ventilator_tester
 
                 dataGridView1.CurrentCell = dataGridView1.Rows[currentStepNumber].Cells[0];
 
+                mut.WaitOne();
+
                 // add datapoint to log and graph
                 datapoints[DATA_MOTOR_RPM_SETPOINT].Add(new DataPoint(currentStep.outp));
+                
+                mut.ReleaseMutex();
 
                 if (currentStep.dura <= 0)
                 {
@@ -453,6 +485,11 @@ namespace open_ventilator_tester
         private void btnStart_Click(object sender, EventArgs e)
         {
 
+            if (cyclepoints.Count==0)
+            {
+                MessageBox.Show("Empty cycle, check cycle!");
+                return;
+            }
             SaveFileDialog sfdial = new SaveFileDialog();
             sfdial.Filter = "Comma Separated Value (*.CSV)|*.CSV";
             sfdial.ShowDialog();
@@ -492,12 +529,16 @@ namespace open_ventilator_tester
             
             if (controlMotor)
             {
-                serialMotor.Open();
-                serialMotor.Write(currentStep.outp.ToString());
-                serialMotor.Close();
+                sendToMotor(currentStep.outp);
             }
         }
 
+        void sendToMotor(int o)
+        {
+            serialMotor.Open();
+            serialMotor.Write(o.ToString());
+            serialMotor.Close();
+        }
         private void btnStop_Click(object sender, EventArgs e)
         {
             stopMotor();
@@ -583,6 +624,8 @@ namespace open_ventilator_tester
 
             }
 
+            mut.WaitOne();
+
             if (a.Contains("V"))
             {
                 // add datapoint to log and graph
@@ -595,6 +638,7 @@ namespace open_ventilator_tester
                 datapoints[DATA_MOTORCURRENT].Add(new DataPoint(v));
 
             }
+            mut.ReleaseMutex();
 
             // 12.649V
             // 0.023A
@@ -605,5 +649,34 @@ namespace open_ventilator_tester
 
         }
 
+        private void toolStripButton1_Click(object sender, EventArgs e)
+        {
+            if (bTestRunning)
+                return;
+
+            DialogResult a = MessageBox.Show("Are you sure you want to calibrate ESC ? This sends 0, pause, 180 pause, 0.", "Run ESC calibration?", MessageBoxButtons.YesNoCancel);
+
+            if (a == DialogResult.Yes)
+            {
+                sendToMotor(0);
+                Thread.Sleep(2000);
+                sendToMotor(180);
+                Thread.Sleep(2000);
+                sendToMotor(0);
+
+            }
+        }
+
+        private void btnMotorManual_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                sendToMotor(Convert.ToInt16(txtMotorManual.Text));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error:" + ex.Message);
+            }
+        }
     }
 }
